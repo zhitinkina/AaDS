@@ -1,55 +1,28 @@
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <stack>
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <memory>
-#include <sstream>
 #include <iomanip>
+#include <functional>
+#include <sstream>
 
 using namespace::std;
 
-enum OperationPriority
-{
-	DIV = 3,
-	MUL = 3,
-	MINUS = 2,
-	PLUS = 1,
-	NONE = 0,
+map<string, function<float(float, float)>> OPERATOR = {
+	{"+", [](float lhs, float rhs) { return lhs + rhs; }},
+	{"-", [](float lhs, float rhs) { return lhs - rhs; }},
+	{"*", [](float lhs, float rhs) { return lhs * rhs; }},
+	{"/", [](float lhs, float rhs) { return lhs / rhs; }},
 };
 
-bool IsOperator(const string & str)
+float DoOperation(string oper, float lhs, float rhs)
 {
-	return (str == "+") || (str == "-")
-		|| (str == "*") || (str == "/");
-}
-
-bool IsFloat(const string & str)
-{
-	istringstream stream(str);
-	float value;
-	stream >> noskipws >> value;
-	return stream.eof() && !stream.fail();
-}
-
-OperationPriority GetOperationPriority(const string & str)
-{
-	if (str == "/") return OperationPriority::DIV;
-	if (str == "*") return OperationPriority::MUL;
-	if (str == "-") return OperationPriority::MINUS;
-	if (str == "+") return OperationPriority::PLUS;
-	return OperationPriority::NONE;
-}
-
-float DoOperation(float op1, float op2, const string & op)
-{
-	if (op == "+") return op1 + op2;
-	if (op == "-") return op1 - op2;
-	if (op == "*") return op1 * op2;
-	if (op == "/") return op1 / op2;
-	throw invalid_argument("Unknown operator '" + op + "'");
+	if ((oper == "+") || (oper == "-") || (oper == "*") || (oper == "/"))
+	{
+		return OPERATOR[oper](lhs, rhs);
+	}
+	throw exception(string("Unknown operator '" + oper + "'").c_str());
 }
 
 class Expression
@@ -94,7 +67,7 @@ public:
 		}
 
 		m_result = (!oper.empty())
-			? to_string(DoOperation(o1, o2, oper))
+			? to_string(DoOperation(oper, o1, o2))
 			: to_string(o2);
 		m_op1 = "";
 		m_oper = "";
@@ -118,7 +91,7 @@ private:
 	string m_result = "[NotCalculated]";
 };
 
-vector<string> TokenizeString(const string & str, char delimeter = ' ')
+vector<string> Tokenize(const string & str, char delimeter = ' ')
 {
 	vector<string> tokens;
 
@@ -132,34 +105,29 @@ vector<string> TokenizeString(const string & str, char delimeter = ' ')
 	return tokens;
 }
 
-void ProcessBinaryOperation(stack<shared_ptr<Expression>> & stack, const string & oper)
-{
-	if (stack.size() < 2)
-	{
-		throw runtime_error("Invalid stack size: cannot get operands");
-	}
-	auto op1 = stack.top(); stack.pop();
-	auto op2 = stack.top(); stack.pop();
-
-	stack.push(make_shared<Expression>(
-		op2->op1() + op2->oper() + op2->op2(),
-		oper,
-		op1->op1() + op1->oper() + op1->op2()
-	));
-}
-
-float CalculateRPN(const vector<string> & tokens)
+float CalcRPN(const vector<string> & tokens)
 {
 	stack<shared_ptr<Expression>> stack;
 	for (const auto & token : tokens)
 	{
-		if (!IsOperator(token))
+		if ((token == "+") || (token == "-") || (token == "*") || (token == "/"))
 		{
-			stack.push(make_shared<Expression>("", "", token));
+			if (stack.size() < 2) throw runtime_error("Invalid stack size: cannot get operands");
+
+			auto op1 = stack.top();
+			stack.pop();
+			auto op2 = stack.top();
+			stack.pop();
+			stack.push(make_shared<Expression>(
+				op2->op1() + op2->oper() + op2->op2(),
+				token,
+				op1->op1() + op1->oper() + op1->op2()
+			));
 		}
 		else
 		{
-			ProcessBinaryOperation(stack, token);
+			if (!std::all_of(token.begin(), token.end(), ::isdigit)) throw exception(string(token + " is not a number").c_str());
+			stack.push(make_shared<Expression>("", "", token));
 		}
 	}
 	if (stack.size() != 1)
