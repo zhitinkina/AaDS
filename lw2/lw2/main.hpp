@@ -28,67 +28,28 @@ float DoOperation(string oper, float lhs, float rhs)
 class Expression
 {
 public:
-	Expression() = delete;
+	string oper1;
+	string operation;
+	string oper2;
+	string m_result;
+
 	Expression(string op1, string oper, string op2)
 	{
-		m_op1 = op1;
-		m_op2 = op2;
-		m_oper = oper;
-
-		float o1 = 0;
-		float o2 = 0;
-		if (!oper.empty())
-		{
-			try
-			{
-				if (!op1.empty() && !op2.empty())
-				{
-					o1 = stof(op1);
-					o2 = stof(op2);
-				}
-				else if (!op1.empty())
-				{
-					o1 = stof(op1);
-				}
-				else if (!op2.empty())
-				{
-					o2 = stof(op2);
-				}
-			}
-			catch (...) {}
-		}
-		else
-		{
-			try
-			{
-				o2 = stof(op2);
-			}
-			catch (...) {}
-		}
+		float o1 = !op1.empty() ? stof(op1) : 0;
+		float o2 = !op2.empty() ? stof(op2) : 0;
 
 		m_result = (!oper.empty())
 			? to_string(DoOperation(oper, o1, o2))
 			: to_string(o2);
-		m_op1 = "";
-		m_oper = "";
-		m_op2 = m_result;
+		oper1 = "";
+		operation = "";
+		oper2 = m_result;
 	}
 
-	string op1() const { return m_op1; }
-	string oper() const { return m_oper; }
-	string op2() const { return m_op2; }
-
-	virtual string ToString() const
+	string ToString() const
 	{
-		return m_op1 + m_oper + m_op2;
+		return oper1 + operation + oper2;
 	}
-
-private:
-	string m_op1;
-	string m_oper;
-	string m_op2;
-
-	string m_result = "[NotCalculated]";
 };
 
 vector<string> Tokenize(const string & str, char delimeter = ' ')
@@ -119,9 +80,9 @@ float CalcRPN(const vector<string> & tokens)
 			auto op2 = stack.top();
 			stack.pop();
 			stack.emplace(
-				op2.op1() + op2.oper() + op2.op2(),
+				op2.oper1 + op2.operation + op2.oper2,
 				token,
-				op1.op1() + op1.oper() + op1.op2()
+				op1.oper1 + op1.operation + op1.oper2
 			);
 		}
 		else
