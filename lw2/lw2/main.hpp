@@ -25,45 +25,32 @@ float DoOperation(string oper, float lhs, float rhs)
 	throw exception(string("Unknown operation '" + oper + "'").c_str());
 }
 
-class Expression
+struct Expression
 {
-public:
-	string oper1;
-	string operation;
-	string oper2;
-	string m_result;
+	string result;
 
 	Expression(string op1, string oper, string op2)
 	{
 		float o1 = !op1.empty() ? stof(op1) : 0;
 		float o2 = !op2.empty() ? stof(op2) : 0;
 
-		m_result = (!oper.empty())
+		result = (!oper.empty())
 			? to_string(DoOperation(oper, o1, o2))
 			: to_string(o2);
-		oper1 = "";
-		operation = "";
-		oper2 = m_result;
-	}
-
-	string ToString() const
-	{
-		return oper1 + operation + oper2;
 	}
 };
 
-vector<string> Tokenize(const string & str, char delimeter = ' ')
+vector<string> Tokenize(const string & str, char separator = ' ')
 {
-	vector<string> tokens;
-
 	stringstream stream(str);
-	string tmp;
 
-	while (getline(stream, tmp, delimeter))
+	vector<string> result;
+	string tmp;
+	while (getline(stream, tmp, separator))
 	{
-		tokens.push_back(tmp);
+		result.push_back(tmp);
 	}
-	return tokens;
+	return result;
 }
 
 float CalcRPN(const vector<string> & tokens)
@@ -79,11 +66,7 @@ float CalcRPN(const vector<string> & tokens)
 			stack.pop();
 			auto op2 = stack.top();
 			stack.pop();
-			stack.emplace(
-				op2.oper1 + op2.operation + op2.oper2,
-				token,
-				op1.oper1 + op1.operation + op1.oper2
-			);
+			stack.emplace(op2.result, token, op1.result);
 		}
 		else
 		{
@@ -95,5 +78,5 @@ float CalcRPN(const vector<string> & tokens)
 	{
 		throw runtime_error("Invalid stack state: should contains only one element");
 	}
-	return stof(stack.top().ToString());
+	return stof(stack.top().result);
 }
