@@ -22,7 +22,7 @@ float DoOperation(string oper, float lhs, float rhs)
 	{
 		return OPERATOR[oper](lhs, rhs);
 	}
-	throw exception(string("Unknown operator '" + oper + "'").c_str());
+	throw exception(string("Unknown operation '" + oper + "'").c_str());
 }
 
 class Expression
@@ -107,7 +107,7 @@ vector<string> Tokenize(const string & str, char delimeter = ' ')
 
 float CalcRPN(const vector<string> & tokens)
 {
-	stack<shared_ptr<Expression>> stack;
+	stack<Expression> stack;
 	for (const auto & token : tokens)
 	{
 		if ((token == "+") || (token == "-") || (token == "*") || (token == "/"))
@@ -118,21 +118,21 @@ float CalcRPN(const vector<string> & tokens)
 			stack.pop();
 			auto op2 = stack.top();
 			stack.pop();
-			stack.push(make_shared<Expression>(
-				op2->op1() + op2->oper() + op2->op2(),
+			stack.emplace(
+				op2.op1() + op2.oper() + op2.op2(),
 				token,
-				op1->op1() + op1->oper() + op1->op2()
-			));
+				op1.op1() + op1.oper() + op1.op2()
+			);
 		}
 		else
 		{
 			if (!std::all_of(token.begin(), token.end(), ::isdigit)) throw exception(string(token + " is not a number").c_str());
-			stack.push(make_shared<Expression>("", "", token));
+			stack.emplace("", "", token);
 		}
 	}
 	if (stack.size() != 1)
 	{
 		throw runtime_error("Invalid stack state: should contains only one element");
 	}
-	return stof(stack.top()->ToString());
+	return stof(stack.top().ToString());
 }
