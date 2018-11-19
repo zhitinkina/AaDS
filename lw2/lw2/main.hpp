@@ -25,20 +25,12 @@ float DoOperation(string oper, float lhs, float rhs)
 	throw exception(string("Unknown operation '" + oper + "'").c_str());
 }
 
-struct Expression
+string DoCalculation(string op1, string oper, string op2)
 {
-	string result;
-
-	Expression(string op1, string oper, string op2)
-	{
-		float o1 = !op1.empty() ? stof(op1) : 0;
-		float o2 = !op2.empty() ? stof(op2) : 0;
-
-		result = (!oper.empty())
-			? to_string(DoOperation(oper, o1, o2))
-			: to_string(o2);
-	}
-};
+	return (!oper.empty())
+		? to_string(DoOperation(oper, op1.empty() ? 0 : stof(op1), op2.empty() ? 0 : stof(op2)))
+		: to_string(op2.empty() ? 0 : stof(op2));
+}
 
 vector<string> Tokenize(const string & str, char separator = ' ')
 {
@@ -55,7 +47,7 @@ vector<string> Tokenize(const string & str, char separator = ' ')
 
 float CalcRPN(const vector<string> & tokens)
 {
-	stack<Expression> stack;
+	stack<string> stack;
 	for (const auto & token : tokens)
 	{
 		if ((token == "+") || (token == "-") || (token == "*") || (token == "/"))
@@ -66,17 +58,17 @@ float CalcRPN(const vector<string> & tokens)
 			stack.pop();
 			auto op2 = stack.top();
 			stack.pop();
-			stack.emplace(op2.result, token, op1.result);
+			stack.emplace(DoCalculation(op2, token, op1));
 		}
 		else
 		{
 			if (!std::all_of(token.begin(), token.end(), ::isdigit)) throw exception(string(token + " is not a number").c_str());
-			stack.emplace("", "", token);
+			stack.emplace(DoCalculation("", "", token));
 		}
 	}
 	if (stack.size() != 1)
 	{
 		throw runtime_error("Invalid stack state: should contains only one element");
 	}
-	return stof(stack.top().result);
+	return stof(stack.top());
 }
