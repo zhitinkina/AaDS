@@ -25,13 +25,6 @@ float DoOperation(string oper, float lhs, float rhs)
 	throw exception(string("Unknown operation '" + oper + "'").c_str());
 }
 
-string DoCalculation(string op1, string oper, string op2)
-{
-	return (!oper.empty())
-		? to_string(DoOperation(oper, op1.empty() ? 0 : stof(op1), op2.empty() ? 0 : stof(op2)))
-		: to_string(op2.empty() ? 0 : stof(op2));
-}
-
 vector<string> Tokenize(const string & str, char separator = ' ')
 {
 	stringstream stream(str);
@@ -47,6 +40,12 @@ vector<string> Tokenize(const string & str, char separator = ' ')
 
 float CalcRPN(const vector<string> & tokens)
 {
+	function<string(string, string, string)> fn = [](string op1, string oper, string op2) {
+		return oper.empty()
+			? to_string(op2.empty() ? 0 : stof(op2))
+			: to_string(DoOperation(oper, op1.empty() ? 0 : stof(op1), op2.empty() ? 0 : stof(op2)));
+	};
+
 	stack<string> stack;
 	for (const auto & token : tokens)
 	{
@@ -58,12 +57,12 @@ float CalcRPN(const vector<string> & tokens)
 			stack.pop();
 			auto op2 = stack.top();
 			stack.pop();
-			stack.emplace(DoCalculation(op2, token, op1));
+			stack.emplace(fn(op2, token, op1));
 		}
 		else
 		{
 			if (!std::all_of(token.begin(), token.end(), ::isdigit)) throw exception(string(token + " is not a number").c_str());
-			stack.emplace(DoCalculation("", "", token));
+			stack.emplace(fn("", "", token));
 		}
 	}
 	if (stack.size() != 1)
