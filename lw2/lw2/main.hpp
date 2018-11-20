@@ -25,11 +25,10 @@ float DoOperation(string oper, float lhs, float rhs)
 	throw exception(string("Unknown operation '" + oper + "'").c_str());
 }
 
-vector<string> Tokenize(const string & str, char separator = ' ')
+vector<string> CreateTokens(const string & str, char separator = ' ')
 {
-	stringstream stream(str);
-
 	vector<string> result;
+	stringstream stream(str);
 	string tmp;
 	while (getline(stream, tmp, separator))
 	{
@@ -38,12 +37,12 @@ vector<string> Tokenize(const string & str, char separator = ' ')
 	return result;
 }
 
-float CalcRPN(const vector<string> & tokens)
+float ReturnToExpression(const vector<string> & tokens) 
 {
-	function<string(string, string, string)> fn = [](string op1, string oper, string op2) {
+	function<string(string, string, string)> readOpers = [](string oper1, string oper, string oper2) {
 		return oper.empty()
-			? to_string(op2.empty() ? 0 : stof(op2))
-			: to_string(DoOperation(oper, op1.empty() ? 0 : stof(op1), op2.empty() ? 0 : stof(op2)));
+			? (to_string(oper2.empty() ? 0 : stof(oper2)))
+			: (to_string(DoOperation(oper, oper1.empty() ? 0 : stof(oper1), oper2.empty() ? 0 : stof(oper2))));
 	};
 
 	stack<string> stack;
@@ -51,23 +50,23 @@ float CalcRPN(const vector<string> & tokens)
 	{
 		if ((token == "+") || (token == "-") || (token == "*") || (token == "/"))
 		{
-			if (stack.size() < 2) throw runtime_error("Invalid stack size: cannot get operands");
+			if (stack.size() < 2) throw runtime_error("Cannot get operands: enter the correct expression");
 
-			auto op1 = stack.top();
+			auto oper1 = stack.top();
 			stack.pop();
-			auto op2 = stack.top();
+			auto oper2 = stack.top();
 			stack.pop();
-			stack.emplace(fn(op2, token, op1));
+			stack.emplace(readOpers(oper2, token, oper1));
 		}
 		else
 		{
 			if (!std::all_of(token.begin(), token.end(), ::isdigit)) throw exception(string(token + " is not a number").c_str());
-			stack.emplace(fn("", "", token));
+			stack.emplace(readOpers("", "", token));
 		}
 	}
 	if (stack.size() != 1)
 	{
-		throw runtime_error("Invalid stack state: should contains only one element");
+		throw runtime_error("Invalid stack state: the required statement was not found");
 	}
 	return stof(stack.top());
 }
